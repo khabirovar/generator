@@ -1,4 +1,7 @@
 from textnode import TextType, TextNode
+from helpers import markdown_to_blocks, text_to_textnodes
+from blocktype import BlockType, block_to_block_type
+
 
 class HTMLNode():
     def __init__(self, tag=None, value=None, children=None, props=None):
@@ -75,3 +78,61 @@ def text_node_to_html_node(text_node):
             return LeafNode('img', '', {'src': text_node.url, 'alt': text_node.text})
         case _:
             raise Exception('Invalid type of text_node')
+
+def text_to_children(text):
+    textnodes = text_to_textnodes(text)
+    htmlnodes = [text_node_to_html_node(item) for item in textnodes]
+    return htmlnodes
+
+def markdown_to_html_node(markdown):
+    root = ParentNode('div', list())
+    blocks = markdown_to_blocks(markdown)
+    for block in blocks:
+        block_type = block_to_block_type(block)
+        node = None
+        if block_type == BlockType.PARAGRAPH:
+            text = ' '.join(block.split('\n'))
+            if not text:
+                node = None
+            else:
+                children = text_to_children(text)
+                node = ParentNode('p',children)
+        elif block_type == BlockType.CODE:
+            text = '\n'.join(block.split('\n')[1:-1]) + '\n'
+            node = LeafNode('code',text)
+            node = ParentNode('pre', [node])
+        elif block_type == BlockType.HEADING:
+            head, text = block.split(' ', maxsplit=1)
+            children = text_to_children(text)
+            node = ParentNode(f'h{len(head)}', children)
+        elif block_type == BlockType.QUOTE:
+            lines = block.split('\n')
+            lines = [item[2:] if item.startswith('> ') else item for item in lines]
+            text = ' '.join(lines)
+            children = text_to_children(text)
+            node = ParentNode('blockquote', children)
+        elif block_type == BlockType.UNORDERED_LIST:
+            lines = block.split('\n')
+            items = list()
+            for line in lines:
+                if not line.strip():
+                    continue
+                text = line[:]
+                if text.startswith('- ') or text.startswith('* '):
+                    text = text[2:]
+                children = text_to_children(text)
+                items.append(ParentNode('li',children))
+            node = ParentNode('ul', items)
+        elif block_type == BlockType.ORDERED_LIST:
+            lines = block.split('\n')
+            items = list()
+            for line in lines:
+                if not line.strip():
+                    continue
+                _, text = line.split('. ',maxsplit=1)
+                children = text_to_children(text)
+                items.append(ParentNode('li', children))
+            node = ParentNode('ol', items)
+        if node is not None:
+            root.children.append(node) 
+    return root 
