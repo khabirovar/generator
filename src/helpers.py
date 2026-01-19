@@ -1,4 +1,6 @@
 import re
+import os
+import shutil
 from textnode import TextType, TextNode
 
 
@@ -78,3 +80,24 @@ def markdown_to_blocks(makrdown):
     blocks = [item.strip() for item in blocks]
     return blocks
 
+def copy_static_to_public(source, destination):
+    print("Debug: current dir content " + str(os.listdir('.')))
+    src = os.path.join('.', source)
+    print(f"Debug: src={src}")
+    dst = os.path.join('.', destination)
+    print(f"Debug: dst={dst}")
+    if os.path.exists(dst):
+        print(f"Debug: dst is exists. Delete it.")
+        shutil.rmtree(dst)
+    os.mkdir(dst)
+    for file in os.listdir(src):
+        print(f"Debug: file={file}")
+        file_path_src = os.path.join(src, file)
+        file_path_dst = os.path.join(dst, file)
+        if os.path.isfile(file_path_src):
+            print(f"Debug: copy {file_path_src} to {file_path_dst}")
+            shutil.copy(file_path_src, file_path_dst)
+        else:
+            print(f"Debug: dir copy {file_path_src} to {file_path_dst}")
+            copy_static_to_public(file_path_src, file_path_dst)
+            
