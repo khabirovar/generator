@@ -16,9 +16,9 @@ def block_to_block_type(block):
         return BlockType.HEADING
     elif len(lines) > 1 and lines[0].startswith('```') and lines[-1].startswith('```'):
         return BlockType.CODE
-    elif earch_line_start_with(lines, '> '):
+    elif each_line_start_with(lines, '> '):
         return BlockType.QUOTE
-    elif earch_line_start_with(lines, '- '):
+    elif each_line_start_with(lines, '- '):
         return BlockType.UNORDERED_LIST
     elif lines[0].startswith('1. '):
         count = 1
@@ -30,7 +30,7 @@ def block_to_block_type(block):
         return BlockType.ORDERED_LIST
     return BlockType.PARAGRAPH
 
-def earch_line_start_with(lines, prefix):
+def each_line_start_with(lines, prefix):
     for line in lines:
         if not line.startswith(prefix):
             return False

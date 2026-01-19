@@ -1,8 +1,9 @@
 import unittest
 
 from htmlnode import HTMLNode, LeafNode, ParentNode, text_node_to_html_node
-from htmlnode import markdown_to_html_node
+from htmlnode import markdown_to_blocks, markdown_to_html_node, extract_title
 from textnode import TextType, TextNode
+from split import text_to_textnodes
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -99,5 +100,34 @@ the **same** even with inline stuff
             html,
             "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
         )
+
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+
+
+    def test_title_extractor(self):
+        md = "# Title"
+        self.assertEqual(extract_title(md), "Title")
+        
+        md = "# Title\nSome other text"
+        self.assertEqual(extract_title(md), "Title")
 
 

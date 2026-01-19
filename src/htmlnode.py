@@ -1,6 +1,8 @@
+import os
+import shutil
 from textnode import TextType, TextNode
-from helpers import markdown_to_blocks, text_to_textnodes
 from blocktype import BlockType, block_to_block_type
+from split import split_nodes_delimiter, split_nodes_image, split_nodes_link, text_to_textnodes
 
 
 class HTMLNode():
@@ -107,7 +109,7 @@ def markdown_to_html_node(markdown):
             node = ParentNode(f'h{len(head)}', children)
         elif block_type == BlockType.QUOTE:
             lines = block.split('\n')
-            lines = [item[2:] if item.startswith('> ') else item for item in lines]
+            lines = [item[2:] for item in lines]
             text = ' '.join(lines)
             children = text_to_children(text)
             node = ParentNode('blockquote', children)
@@ -136,3 +138,54 @@ def markdown_to_html_node(markdown):
         if node is not None:
             root.children.append(node) 
     return root 
+
+def markdown_to_blocks(makrdown):
+    blocks = makrdown.split('\n\n')
+    blocks = [item.strip() for item in blocks]
+    return blocks
+
+def copy_static_to_public(source, destination):
+    print("Debug: current dir content " + str(os.listdir('.')))
+    src = os.path.join('.', source)
+    print(f"Debug: src={src}")
+    dst = os.path.join('.', destination)
+    print(f"Debug: dst={dst}")
+    if os.path.exists(dst):
+        print(f"Debug: dst is exists. Delete it.")
+        shutil.rmtree(dst)
+    os.mkdir(dst)
+    for file in os.listdir(src):
+        print(f"Debug: file={file}")
+        file_path_src = os.path.join(src, file)
+        file_path_dst = os.path.join(dst, file)
+        if os.path.isfile(file_path_src):
+            print(f"Debug: copy {file_path_src} to {file_path_dst}")
+            shutil.copy(file_path_src, file_path_dst)
+        else:
+            print(f"Debug: dir copy {file_path_src} to {file_path_dst}")
+            copy_static_to_public(file_path_src, file_path_dst)
+
+
+def extract_title(markdown):
+    for line in markdown.split('\n'):
+        if line.startswith('# '):
+            _, title = line.split(' ', maxsplit=1)
+            return title
+    raise Exception("No title in markdown file")
+
+def generate_page(from_path, template_path, dest_path):
+    print(f'Generating page from {from_path} to {dest_path} using {template_path}')
+    with open(from_path, 'r') as f:
+        markdown = f.read()
+    with open(template_path, 'r') as f:
+        template = f.read()
+    content = markdown_to_html_node(markdown).to_html()
+    title = extract_title(markdown)
+    page = template.replace('{{ Title }}', title)
+    page = page.replace('{{ Content }}', content)
+    dirs = os.path.dirname(dest_path)
+    if dirs:
+        os.makedirs(dirs, exist_ok = True)
+    with open(dest_path, 'w') as f:
+        f.write(page)
+
